@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALERTE GARDE À VUE</title>
+<style>
+body{font-family:Arial,sans-serif;background:#edf1f5;text-align:center;padding:20px;color:#14213d}
+main{max-width:430px;margin:40px auto;background:white;padding:25px;border-radius:20px;box-shadow:0 3px 15px #0002}
+button{width:100%;padding:20px;border:0;border-radius:12px;font-size:18px;font-weight:bold;margin:10px 0}
+#sos{background:#c62828;color:white;padding:30px}
+#share{background:#14213d;color:white}
+#share:disabled{opacity:.5}
+#status{line-height:1.5;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<main>
+<h1>🛡️ ALERTE GARDE À VUE</h1>
+<p>Protéger • Alerter • Accompagner</p>
+<p>Préparez une alerte à destination de vos proches.</p>
+<button id="sos">🚨 DÉCLENCHER MON SOS</button>
+<p id="status" role="status">Aucune alerte en cours.</p>
+<button id="share" disabled>📤 PARTAGER MON ALERTE</button>
+<p><small>Prototype : aucun message n'est envoyé automatiquement.</small></p>
+</main>
+<script>
+let message="";
+const status=document.getElementById("status");
+const share=document.getElementById("share");
+document.getElementById("sos").onclick=()=>{
+const date=new Date().toLocaleString("fr-FR");
+message="ALERTE SOS. Merci de me contacter rapidement. Heure : "+date+". Position non disponible.";
+share.disabled=false;
+status.textContent="Recherche de votre position...";
+if(!navigator.geolocation){
+status.textContent="Géolocalisation indisponible. Alerte sans position prête.";
+return;
+}
+navigator.geolocation.getCurrentPosition(
+pos=>{
+const {latitude,longitude}=pos.coords;
+const url="https://www.google.com/maps?q="+latitude+","+longitude;
+message="ALERTE SOS. Merci de me contacter rapidement. Heure : "+date+". Dernière position connue : "+url+". Le lieu de garde à vue n'est pas confirmé.";
+status.textContent="Position obtenue. Vous pouvez partager votre alerte.";
+},
+()=>{status.textContent="Position indisponible. Alerte sans position prête.";},
+{enableHighAccuracy:true,timeout:12000,maximumAge:0}
+);
+};
+share.onclick=async()=>{
+if(!message)return;
+if(navigator.share){
+try{await navigator.share({title:"Alerte SOS",text:message});}
+catch(e){if(e.name!=="AbortError")status.textContent="Partage impossible. Réessayez.";}
+}else{
+try{
+await navigator.clipboard.writeText(message);
+status.textContent="Message copié. Collez-le dans un SMS.";
+}catch(e){status.textContent=message;}
+}
+};
+</script>
+</body>
+</html>
